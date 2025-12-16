@@ -170,7 +170,6 @@ For full roadmap details, see [`docs/future-roadmap.md`](docs/future-roadmap.md)
 
 **Repository:**
 - 📦 [Parent Platform: EchoLabs-AI](https://github.com/ArjunFrancis/Echolabs-AI)
-- 📝 [Project System Prompt (llm.txt)](llm.txt)
 - 📜 [Changelog](CHANGELOG.md)
 
 ---
