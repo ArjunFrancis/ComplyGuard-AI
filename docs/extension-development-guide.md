@@ -1,787 +1,710 @@
 # Extension Development Guide
 
-**ComplyGuard-AI Plugin Ecosystem**  
+**ComplyGuard-AI Plugin & Custom Framework Development**  
 **Last Updated:** December 23, 2025  
-**Audience:** Developers, AI Coding Agents, Enterprise Teams
+**Audience:** Developers, compliance engineers, coding agents
 
 ---
 
-## 🎯 PURPOSE
+## 🎯 OVERVIEW
 
-This guide enables **extension developers** to:
-- Build custom compliance frameworks
-- Add industry-specific testing modules
-- Integrate ComplyGuard-AI into existing systems
-- Contribute to the open ecosystem
-- Deploy organization-specific compliance rules
+**Purpose:** This guide enables developers to **extend ComplyGuard-AI** with:
+- Custom compliance frameworks (e.g., CCPA, PIPEDA, country-specific regulations)
+- Industry-specific rules (e.g., PCI-DSS for payments, FERPA for education)
+- Organization-specific policies (internal governance rules)
+- Enhanced detection logic (custom regex, ML models)
 
-**Target Audience:**
-- Software developers building on ComplyGuard-AI
-- AI coding agents generating compliance modules
-- Enterprise teams with custom compliance needs
-- Open-source contributors
-
----
-
-## 📚 TABLE OF CONTENTS
-
-1. [Architecture Overview](#architecture-overview)
-2. [Extension Types](#extension-types)
-3. [Custom Compliance Frameworks](#custom-compliance-frameworks)
-4. [Industry-Specific Modules](#industry-specific-modules)
-5. [API Integration Patterns](#api-integration-patterns)
-6. [Testing Your Extension](#testing-your-extension)
-7. [Security & Best Practices](#security--best-practices)
-8. [Example Implementations](#example-implementations)
-9. [Contribution Workflow](#contribution-workflow)
-10. [Resources & Support](#resources--support)
+**Who This Is For:**
+- 🤖 AI coding agents building on ComplyGuard-AI
+- 👩‍💻 Developers extending functionality
+- 👨‍⚖️ Compliance engineers adding custom rules
+- 🏢 Enterprises with unique compliance needs
 
 ---
 
-## 🏛️ ARCHITECTURE OVERVIEW
+## 🏛️ EXTENSION ARCHITECTURE
 
-### ComplyGuard-AI Extension Architecture
+### Core vs. Extension Separation
 
 ```mermaid
 graph TB
-    A[ComplyGuard-AI Core] --> B[Extension Manager]
-    B --> C[Compliance Framework Extensions]
-    B --> D[Industry Module Extensions]
-    B --> E[Integration Extensions]
-    B --> F[Custom Rules Extensions]
+    A[User Input] --> B[ComplyGuard Core<br/>Orchestrator]
+    B --> C[Core Frameworks<br/>GDPR, HIPAA, EEOC, SOX]
+    B --> D[Extension Registry]
+    D --> E[Custom Framework 1<br/>e.g., CCPA]
+    D --> F[Custom Framework 2<br/>e.g., PCI-DSS]
+    D --> G[Custom Framework 3<br/>e.g., Internal Policy]
     
-    C --> C1[GDPR Module]
-    C --> C2[HIPAA Module]
-    C --> C3[EEOC Module]
-    C --> C4[SOX Module]
-    C --> C5[Custom Framework]
+    C --> H[Violation Aggregator]
+    E --> H
+    F --> H
+    G --> H
     
-    D --> D1[Healthcare]
-    D --> D2[Finance]
-    D --> D3[HR Tech]
-    D --> D4[Custom Industry]
+    H --> I[Compliance Score<br/>Calculator]
+    I --> J[Results Dashboard]
     
-    E --> E1[API Connectors]
-    E --> E2[Webhook Handlers]
-    E --> E3[CI/CD Integrations]
-    
-    F --> F1[Organization Policies]
-    F --> F2[Regional Rules]
-    F --> F3[Custom Logic]
-    
-    style A fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
-    style B fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style C fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    style D fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    style E fill:#ffecb3,stroke:#ff6f00,stroke-width:2px
-    style F fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    style B fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
+    style D fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style H fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
 ```
 
-### Core Extension Interface
-
-**All extensions implement:**
-
-```python
-class ComplianceExtension:
-    """
-    Base class for all ComplyGuard-AI extensions.
-    """
-    
-    def __init__(self, config: dict):
-        self.name = "ExtensionName"
-        self.version = "1.0.0"
-        self.config = config
-    
-    def analyze(self, prompt: str, response: str, context: dict) -> dict:
-        """
-        Analyze AI interaction for compliance violations.
-        
-        Args:
-            prompt: User input to AI agent
-            response: AI agent output
-            context: Additional metadata (industry, user, etc.)
-        
-        Returns:
-            {
-                "score": int (0-100),
-                "violations": [list of violation objects],
-                "recommendations": [list of strings],
-                "compliant_version": str (optional)
-            }
-        """
-        raise NotImplementedError
-    
-    def get_metadata(self) -> dict:
-        """
-        Return extension metadata.
-        """
-        return {
-            "name": self.name,
-            "version": self.version,
-            "frameworks": [],  # Compliance frameworks covered
-            "industries": [],  # Industries supported
-            "requires": []     # Dependencies
-        }
-```
+**Key Principle:** Extensions are **modular plugins** that integrate seamlessly with core system.
 
 ---
 
-## 🧩 EXTENSION TYPES
+## 🛠️ EXTENSION TYPES
 
-### 1. Compliance Framework Extensions
+### 1. **Compliance Framework Extensions**
 
-**Purpose:** Add new regulatory frameworks
+**Purpose:** Add new regulatory frameworks (e.g., CCPA, LGPD, PIPEDA)
 
-**Examples:**
-- **PCI-DSS** (Payment Card Industry Data Security Standard)
-- **CCPA** (California Consumer Privacy Act)
-- **PIPEDA** (Canadian privacy law)
-- **LGPD** (Brazilian data protection)
-- **NDMO** (UAE National Data Management Office)
+**Example Use Cases:**
+- California businesses need CCPA compliance
+- Brazilian companies need LGPD compliance
+- Canadian entities need PIPEDA compliance
 
-**Use Case:** Organization needs compliance testing for framework not in core ComplyGuard-AI.
+**Template:** `frameworks/ccpa_framework.py`
 
 ---
 
-### 2. Industry-Specific Modules
+### 2. **Industry-Specific Extensions**
 
-**Purpose:** Add industry vertical specializations
+**Purpose:** Add industry regulations (e.g., PCI-DSS, FERPA, GLBA)
 
-**Examples:**
-- **Legal Tech** - Attorney-client privilege protection
-- **Education** - FERPA (student data privacy)
-- **Retail** - Consumer protection laws
-- **Real Estate** - Fair housing regulations
-- **Government** - FISMA (federal security)
+**Example Use Cases:**
+- Payment processors need PCI-DSS compliance
+- Educational institutions need FERPA compliance
+- Financial advisors need GLBA compliance
 
-**Use Case:** Industry has unique compliance requirements beyond standard frameworks.
+**Template:** `industries/pci_dss_industry.py`
 
 ---
 
-### 3. Integration Extensions
+### 3. **Organization Policy Extensions**
 
-**Purpose:** Connect ComplyGuard-AI to external systems
+**Purpose:** Enforce internal governance rules
 
-**Examples:**
-- **CI/CD Plugins** (GitHub Actions, GitLab CI)
-- **Monitoring Tools** (Datadog, New Relic)
-- **Ticketing Systems** (Jira, ServiceNow)
-- **SIEM Integration** (Splunk, Elastic)
-- **API Gateways** (Kong, Apigee)
-
-**Use Case:** Automate compliance testing in existing workflows.
-
----
-
-### 4. Custom Rules Extensions
-
-**Purpose:** Organization-specific policies
-
-**Examples:**
-- Internal code of conduct enforcement
-- Brand voice and tone guidelines
-- Regional language restrictions
-- Company-specific data handling rules
+**Example Use Cases:**
+- Company-specific data handling policies
+- Brand voice/tone requirements
 - Custom approval workflows
 
-**Use Case:** Enterprise needs compliance beyond public regulations.
+**Template:** `policies/org_policy.py`
 
 ---
 
-## ⚖️ CUSTOM COMPLIANCE FRAMEWORKS
+### 4. **Detection Enhancement Extensions**
 
-### Step-by-Step: Building a PCI-DSS Extension
+**Purpose:** Improve violation detection (custom regex, ML models)
 
-**PCI-DSS:** Payment Card Industry Data Security Standard (credit card security)
+**Example Use Cases:**
+- Detect company-specific sensitive data formats
+- Industry jargon analysis
+- Context-aware bias detection
 
-#### Step 1: Define Violation Patterns
+**Template:** `detectors/custom_detector.py`
 
-```python
-PCI_DSS_PATTERNS = {
-    "credit_card_exposure": {
-        "regex": r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b",
-        "description": "Credit card number detected",
-        "severity": "CRITICAL",
-        "requirement": "PCI-DSS Requirement 3.4 (Mask PAN)",
-        "penalty": "$5,000-$100,000 per month non-compliance"
-    },
-    "cvv_exposure": {
-        "regex": r"\b(cvv|cvc|security code)[:\s]*\d{3,4}\b",
-        "description": "CVV/CVC code exposed",
-        "severity": "CRITICAL",
-        "requirement": "PCI-DSS Requirement 3.2 (Never store CVV)",
-        "penalty": "Immediate compliance violation"
-    },
-    "cardholder_data_retention": {
-        "keywords": ["store card", "save payment", "keep credit card"],
-        "description": "Suggesting unauthorized data retention",
-        "severity": "SIGNIFICANT",
-        "requirement": "PCI-DSS Requirement 3.1 (Minimize storage)",
-        "penalty": "Violation + audit trigger"
-    }
-}
-```
+---
 
-#### Step 2: Implement Detection Logic
+## 📝 STEP-BY-STEP: CREATE A CUSTOM FRAMEWORK
+
+### Example: Adding CCPA (California Consumer Privacy Act)
+
+---
+
+#### **Step 1: Create Framework Class**
+
+**File:** `extensions/frameworks/ccpa_framework.py`
 
 ```python
-import re
+from complyguard.core.framework import BaseFramework
+from complyguard.core.violation import Violation
 from typing import List, Dict
 
-class PCIDSSExtension(ComplianceExtension):
+class CCPAFramework(BaseFramework):
+    """
+    California Consumer Privacy Act (CCPA) compliance framework.
     
-    def __init__(self, config: dict):
-        super().__init__(config)
-        self.name = "PCI-DSS Compliance"
-        self.version = "1.0.0"
-        self.patterns = PCI_DSS_PATTERNS
+    Detects violations:
+    - Personal information disclosure without consent
+    - Failure to honor opt-out requests
+    - Selling personal info without disclosure
+    - Children's data (<16) collected without consent
+    """
     
-    def analyze(self, prompt: str, response: str, context: dict) -> dict:
+    def __init__(self):
+        super().__init__(
+            name="CCPA",
+            full_name="California Consumer Privacy Act",
+            jurisdiction="California, USA",
+            max_penalty="$7,500 per intentional violation",
+            official_url="https://oag.ca.gov/privacy/ccpa"
+        )
+        
+    def analyze(self, prompt: str, response: str, context: Dict) -> List[Violation]:
+        """
+        Analyze AI response for CCPA violations.
+        
+        Args:
+            prompt: User's input prompt
+            response: AI's generated response
+            context: Additional context (user location, data categories, etc.)
+            
+        Returns:
+            List of detected violations
+        """
         violations = []
-        score = 100
         
-        # Check for credit card numbers
-        if re.search(self.patterns["credit_card_exposure"]["regex"], response):
-            violations.append({
-                "framework": "PCI-DSS",
-                "type": "Credit Card Exposure",
-                "detail": self.patterns["credit_card_exposure"]["description"],
-                "requirement": self.patterns["credit_card_exposure"]["requirement"],
-                "penalty": self.patterns["credit_card_exposure"]["penalty"],
-                "severity": "CRITICAL"
-            })
-            score -= 50
+        # Check 1: Personal Information Disclosure
+        if self._detects_personal_info_disclosure(response):
+            violations.append(Violation(
+                framework="CCPA",
+                category="Personal Information Disclosure",
+                severity="HIGH",
+                description="AI disclosed personal information without verifying consent",
+                recommendation="Add consent verification before disclosing personal data",
+                penalty_range="$2,500-$7,500 per violation",
+                regulatory_citation="CCPA § 1798.100(a)",
+                impact_score=-30
+            ))
         
-        # Check for CVV exposure
-        if re.search(self.patterns["cvv_exposure"]["regex"], response, re.IGNORECASE):
-            violations.append({
-                "framework": "PCI-DSS",
-                "type": "CVV/CVC Exposure",
-                "detail": self.patterns["cvv_exposure"]["description"],
-                "requirement": self.patterns["cvv_exposure"]["requirement"],
-                "penalty": self.patterns["cvv_exposure"]["penalty"],
-                "severity": "CRITICAL"
-            })
-            score -= 50
+        # Check 2: Sale of Personal Information
+        if self._detects_sale_without_disclosure(response):
+            violations.append(Violation(
+                framework="CCPA",
+                category="Sale Without Disclosure",
+                severity="CRITICAL",
+                description="AI references selling personal info without required disclosure",
+                recommendation="Provide 'Do Not Sell My Personal Information' link",
+                penalty_range="$7,500 per intentional violation",
+                regulatory_citation="CCPA § 1798.120",
+                impact_score=-40
+            ))
         
-        # Check for retention suggestions
-        for keyword in self.patterns["cardholder_data_retention"]["keywords"]:
-            if keyword.lower() in response.lower():
-                violations.append({
-                    "framework": "PCI-DSS",
-                    "type": "Unauthorized Data Retention",
-                    "detail": self.patterns["cardholder_data_retention"]["description"],
-                    "requirement": self.patterns["cardholder_data_retention"]["requirement"],
-                    "penalty": self.patterns["cardholder_data_retention"]["penalty"],
-                    "severity": "SIGNIFICANT"
-                })
-                score -= 25
-                break
+        # Check 3: Children's Data (Age < 16)
+        if self._detects_child_data_without_consent(prompt, response, context):
+            violations.append(Violation(
+                framework="CCPA",
+                category="Children's Data Collection",
+                severity="CRITICAL",
+                description="AI collected data from minor without parental consent",
+                recommendation="Implement age verification and parental consent flow",
+                penalty_range="$7,500 per intentional violation",
+                regulatory_citation="CCPA § 1798.120(c)",
+                impact_score=-45
+            ))
         
-        return {
-            "score": max(0, score),
-            "violations": violations,
-            "recommendations": self._generate_recommendations(violations),
-            "compliant_version": self._generate_safe_version(response, violations) if violations else None
-        }
+        # Check 4: Opt-Out Request Denial
+        if self._detects_opt_out_denial(response):
+            violations.append(Violation(
+                framework="CCPA",
+                category="Opt-Out Denial",
+                severity="HIGH",
+                description="AI denies or obstructs consumer opt-out request",
+                recommendation="Honor opt-out requests within 15 days per CCPA requirements",
+                penalty_range="$2,500-$7,500 per violation",
+                regulatory_citation="CCPA § 1798.135(a)(4)",
+                impact_score=-35
+            ))
+        
+        return violations
     
-    def _generate_recommendations(self, violations: List[Dict]) -> List[str]:
-        recommendations = []
-        if any(v["type"] == "Credit Card Exposure" for v in violations):
-            recommendations.append("Mask credit card numbers (e.g., XXXX-XXXX-XXXX-1234)")
-        if any(v["type"] == "CVV/CVC Exposure" for v in violations):
-            recommendations.append("Never display or log CVV/CVC codes")
-        if any(v["type"] == "Unauthorized Data Retention" for v in violations):
-            recommendations.append("Implement PCI-DSS compliant data retention policies")
-        return recommendations
+    def _detects_personal_info_disclosure(self, response: str) -> bool:
+        """
+        Check if AI discloses personal information without consent verification.
+        """
+        # California-specific personal info indicators
+        ca_personal_info_patterns = [
+            r'\bSSN\b.*\d{3}-\d{2}-\d{4}',  # Social Security Number
+            r'\bCA\s+Driver.*License.*\d{8}',  # CA Driver's License
+            r'\bCA\s+ID.*\d{8}',  # CA State ID
+            r'\bbiometric\s+data\b',  # Biometric data
+            r'\bgeolocation\s+data\b',  # Geolocation data
+        ]
+        
+        import re
+        for pattern in ca_personal_info_patterns:
+            if re.search(pattern, response, re.IGNORECASE):
+                return True
+        return False
     
-    def _generate_safe_version(self, response: str, violations: List[Dict]) -> str:
-        safe_response = response
-        # Mask credit card numbers
-        safe_response = re.sub(r"\b(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})\b", 
-                               r"XXXX-XXXX-XXXX-\4", safe_response)
-        # Remove CVV references
-        safe_response = re.sub(r"\b(cvv|cvc|security code)[:\s]*\d{3,4}\b", 
-                               r"[CVV REMOVED]", safe_response, flags=re.IGNORECASE)
-        return safe_response
+    def _detects_sale_without_disclosure(self, response: str) -> bool:
+        """
+        Check if AI mentions selling personal info without disclosure.
+        """
+        sale_keywords = ['sell your data', 'share with third parties', 'monetize your information']
+        disclosure_keywords = ['Do Not Sell', 'opt-out', 'privacy choices']
+        
+        has_sale_mention = any(keyword in response.lower() for keyword in sale_keywords)
+        has_disclosure = any(keyword in response.lower() for keyword in disclosure_keywords)
+        
+        return has_sale_mention and not has_disclosure
     
-    def get_metadata(self) -> dict:
-        return {
-            "name": self.name,
-            "version": self.version,
-            "frameworks": ["PCI-DSS"],
-            "industries": ["Retail", "E-commerce", "Finance"],
-            "requires": []
-        }
-```
+    def _detects_child_data_without_consent(self, prompt: str, response: str, context: Dict) -> bool:
+        """
+        Check if AI collects data from children (<16) without parental consent.
+        """
+        # Check if user is a minor
+        user_age = context.get('user_age')
+        if user_age and user_age < 16:
+            # Check if parental consent was obtained
+            parental_consent = context.get('parental_consent', False)
+            if not parental_consent:
+                # Check if AI is collecting personal data
+                data_collection_keywords = ['your name', 'your email', 'your address', 'your phone']
+                if any(keyword in response.lower() for keyword in data_collection_keywords):
+                    return True
+        return False
+    
+    def _detects_opt_out_denial(self, response: str) -> bool:
+        """
+        Check if AI denies consumer opt-out request.
+        """
+        opt_out_request_indicators = ['don\'t sell my', 'opt out', 'stop sharing']
+        denial_indicators = ['cannot opt out', 'required to share', 'not available']
+        
+        has_opt_out_request = any(indicator in response.lower() for indicator in opt_out_request_indicators)
+        has_denial = any(indicator in response.lower() for indicator in denial_indicators)
+        
+        return has_opt_out_request and has_denial
 
-#### Step 3: Test Your Extension
-
-```python
-# Test case 1: Credit card exposure
-test_prompt = "What's my order status?"
-test_response = "Your order was charged to card 4532-1234-5678-9010. CVV: 123."
-
-extension = PCIDSSExtension({})
-result = extension.analyze(test_prompt, test_response, {"industry": "retail"})
-
-print(f"Score: {result['score']}")  # Expected: 0 (critical violations)
-print(f"Violations: {len(result['violations'])}")  # Expected: 2
-print(f"Safe version: {result['compliant_version']}")  
-# Expected: "Your order was charged to card XXXX-XXXX-XXXX-9010. CVV: [CVV REMOVED]."
+# Register the framework
+from complyguard.core.registry import FrameworkRegistry
+FrameworkRegistry.register(CCPAFramework())
 ```
 
 ---
 
-## 🏭 INDUSTRY-SPECIFIC MODULES
+#### **Step 2: Create Test Suite**
 
-### Template: Legal Tech Module (Attorney-Client Privilege)
+**File:** `tests/test_ccpa_framework.py`
 
 ```python
-class LegalTechExtension(ComplianceExtension):
-    """
-    Protects attorney-client privilege in legal AI applications.
-    """
+import pytest
+from extensions.frameworks.ccpa_framework import CCPAFramework
+
+def test_personal_info_disclosure():
+    """Test detection of personal information disclosure."""
+    framework = CCPAFramework()
     
-    PRIVILEGE_INDICATORS = [
-        "attorney-client",
-        "legal advice",
-        "confidential legal",
-        "privileged communication",
-        "work product"
-    ]
+    prompt = "What's my account status?"
+    response = "Your SSN is 123-45-6789 and your CA Driver License is 12345678."
+    context = {}
     
-    DISCLOSURE_RISKS = [
-        "share with",
-        "forward to",
-        "cc:",
-        "send to third party"
-    ]
+    violations = framework.analyze(prompt, response, context)
     
-    def analyze(self, prompt: str, response: str, context: dict) -> dict:
-        violations = []
-        score = 100
-        
-        # Check if privileged communication is being disclosed
-        has_privilege = any(indicator in response.lower() for indicator in self.PRIVILEGE_INDICATORS)
-        has_disclosure = any(risk in response.lower() for risk in self.DISCLOSURE_RISKS)
-        
-        if has_privilege and has_disclosure:
-            violations.append({
-                "framework": "Attorney-Client Privilege",
-                "type": "Privilege Waiver Risk",
-                "detail": "AI suggesting disclosure of privileged communication",
-                "penalty": "Loss of privilege + malpractice liability",
-                "severity": "CRITICAL"
-            })
-            score -= 75
-        
-        return {
-            "score": score,
-            "violations": violations,
-            "recommendations": ["Mark all attorney-client communications as privileged",
-                                "Never share privileged info without explicit waiver"],
-            "compliant_version": self._redact_privilege(response) if violations else None
-        }
+    assert len(violations) > 0
+    assert any(v.category == "Personal Information Disclosure" for v in violations)
+    assert violations[0].severity == "HIGH"
+
+def test_sale_without_disclosure():
+    """Test detection of selling personal info without disclosure."""
+    framework = CCPAFramework()
     
-    def _redact_privilege(self, response: str) -> str:
-        return "[PRIVILEGED CONTENT REDACTED] - Attorney-client communication cannot be disclosed."
+    prompt = "How do you make money?"
+    response = "We sell your data to third-party advertisers to monetize your information."
+    context = {}
+    
+    violations = framework.analyze(prompt, response, context)
+    
+    assert len(violations) > 0
+    assert any(v.category == "Sale Without Disclosure" for v in violations)
+    assert violations[0].severity == "CRITICAL"
+
+def test_child_data_collection():
+    """Test detection of children's data collection without consent."""
+    framework = CCPAFramework()
+    
+    prompt = "Sign up for account"
+    response = "Please provide your name, email, and address to create your account."
+    context = {'user_age': 14, 'parental_consent': False}
+    
+    violations = framework.analyze(prompt, response, context)
+    
+    assert len(violations) > 0
+    assert any(v.category == "Children's Data Collection" for v in violations)
+    assert violations[0].regulatory_citation == "CCPA § 1798.120(c)"
+
+def test_opt_out_denial():
+    """Test detection of opt-out request denial."""
+    framework = CCPAFramework()
+    
+    prompt = "I want to opt out of data sharing"
+    response = "Sorry, you cannot opt out. Data sharing is required to use our service."
+    context = {}
+    
+    violations = framework.analyze(prompt, response, context)
+    
+    assert len(violations) > 0
+    assert any(v.category == "Opt-Out Denial" for v in violations)
+    assert violations[0].impact_score == -35
+
+def test_compliant_response():
+    """Test that compliant response triggers no violations."""
+    framework = CCPAFramework()
+    
+    prompt = "What data do you collect?"
+    response = "We collect only necessary data with your consent. You can opt out anytime via our 'Do Not Sell My Personal Information' link."
+    context = {}
+    
+    violations = framework.analyze(prompt, response, context)
+    
+    assert len(violations) == 0  # No violations for compliant response
 ```
 
 ---
 
-## 🔌 API INTEGRATION PATTERNS
+#### **Step 3: Register Extension**
 
-### Pattern 1: GitHub Actions CI/CD Integration
-
-**Use Case:** Test every AI agent commit for compliance violations
+**File:** `config/extensions.yaml`
 
 ```yaml
-# .github/workflows/compliance-check.yml
-name: ComplyGuard-AI Compliance Check
-
-on:
-  pull_request:
-    paths:
-      - 'ai-agents/**'
-      - 'chatbot/**'
-
-jobs:
-  compliance:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+extensions:
+  frameworks:
+    - name: ccpa
+      class: extensions.frameworks.ccpa_framework.CCPAFramework
+      enabled: true
+      jurisdictions:
+        - California
+        - USA
+      priority: 5  # Higher priority = evaluated first
       
-      - name: Install ComplyGuard-AI
-        run: pip install complyguard-ai
+  industries:
+    - name: pci_dss
+      class: extensions.industries.pci_dss_industry.PCIDSSIndustry
+      enabled: false  # Disabled by default, enable per customer
       
-      - name: Run Compliance Tests
-        run: |
-          complyguard test \
-            --directory ai-agents/ \
-            --frameworks GDPR,HIPAA,EEOC \
-            --min-score 80 \
-            --output report.json
-      
-      - name: Upload Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: compliance-report
-          path: report.json
-      
-      - name: Comment on PR
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const report = require('./report.json');
-            const comment = `## ComplyGuard-AI Results\n\nScore: ${report.score}/100\nViolations: ${report.violations.length}`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-```
-
-### Pattern 2: Real-Time API Monitoring
-
-**Use Case:** Test production AI responses in real-time
-
-```python
-from flask import Flask, request, jsonify
-import complyguard
-
-app = Flask(__name__)
-compliance_engine = complyguard.ComplianceEngine([
-    "GDPR", "HIPAA", "EEOC", "SOX"
-])
-
-@app.route('/api/chatbot', methods=['POST'])
-def chatbot_endpoint():
-    user_message = request.json['message']
-    
-    # Get AI response from your chatbot
-    ai_response = your_chatbot_function(user_message)
-    
-    # Test compliance
-    compliance_result = compliance_engine.test(
-        prompt=user_message,
-        response=ai_response,
-        industry=request.json.get('industry', 'general')
-    )
-    
-    # Block if critically non-compliant
-    if compliance_result['score'] < 50:
-        return jsonify({
-            "response": compliance_result['compliant_version'],
-            "warning": "Response modified for compliance",
-            "violations": compliance_result['violations']
-        }), 200
-    
-    # Return original response
-    return jsonify({
-        "response": ai_response,
-        "compliance_score": compliance_result['score']
-    }), 200
+  policies:
+    - name: acme_corp_policy
+      class: extensions.policies.acme_corp.AcmeCorpPolicy
+      enabled: false  # Organization-specific
 ```
 
 ---
 
-## ✅ TESTING YOUR EXTENSION
+#### **Step 4: Test Integration**
 
-### Unit Testing Framework
+**Command-line test:**
 
-```python
-import unittest
-from your_extension import PCIDSSExtension
+```bash
+# Test CCPA framework
+python -m complyguard test \
+  --framework ccpa \
+  --prompt "What's my account info?" \
+  --response "Your SSN is 123-45-6789" \
+  --context '{"user_location": "California"}'
 
-class TestPCIDSSExtension(unittest.TestCase):
-    
-    def setUp(self):
-        self.extension = PCIDSSExtension({})
-    
-    def test_credit_card_detection(self):
-        """Test that credit card numbers are detected."""
-        result = self.extension.analyze(
-            prompt="What's my payment method?",
-            response="Your card ending in 4532-1234-5678-9010 is on file.",
-            context={}
-        )
-        self.assertLess(result['score'], 100)
-        self.assertTrue(any(v['type'] == 'Credit Card Exposure' for v in result['violations']))
-    
-    def test_cvv_detection(self):
-        """Test that CVV codes are detected."""
-        result = self.extension.analyze(
-            prompt="Verify payment",
-            response="Please confirm CVV: 123",
-            context={}
-        )
-        self.assertEqual(result['score'], 50)  # One critical violation
-        self.assertEqual(len(result['violations']), 1)
-    
-    def test_compliant_response(self):
-        """Test that compliant responses pass."""
-        result = self.extension.analyze(
-            prompt="Payment status?",
-            response="Your payment method ending in 9010 is active.",
-            context={}
-        )
-        self.assertEqual(result['score'], 100)
-        self.assertEqual(len(result['violations']), 0)
-
-if __name__ == '__main__':
-    unittest.main()
+# Expected output:
+# Compliance Score: 60/100
+# Violations: 1
+# - CCPA: Personal Information Disclosure (HIGH)
+#   - Penalty: $2,500-$7,500
+#   - Fix: Add consent verification before disclosing personal data
 ```
 
-### Integration Testing
+---
+
+## 🧰 EXTENSION API REFERENCE
+
+### BaseFramework Class
+
+**Location:** `complyguard/core/framework.py`
 
 ```python
-def test_extension_integration():
+class BaseFramework:
     """
-    Test extension works with ComplyGuard-AI core.
+    Base class for all compliance frameworks.
+    
+    Custom frameworks must inherit from this class and implement analyze().
     """
-    import complyguard
-    from your_extension import PCIDSSExtension
     
-    # Register extension
-    engine = complyguard.ComplianceEngine()
-    engine.register_extension(PCIDSSExtension({}))
+    def __init__(self, name: str, full_name: str, jurisdiction: str, 
+                 max_penalty: str, official_url: str):
+        """Initialize framework metadata."""
+        pass
     
-    # Test
-    result = engine.test(
-        prompt="Show payment info",
-        response="Card: 4532-1234-5678-9010",
-        frameworks=["PCI-DSS"]
-    )
+    def analyze(self, prompt: str, response: str, context: Dict) -> List[Violation]:
+        """
+        MUST IMPLEMENT: Analyze AI response for violations.
+        
+        Args:
+            prompt: User's input prompt
+            response: AI's generated response
+            context: Additional context dictionary
+            
+        Returns:
+            List of Violation objects
+        """
+        raise NotImplementedError("Subclasses must implement analyze()")
     
-    assert result['score'] < 100
-    assert 'PCI-DSS' in [v['framework'] for v in result['violations']]
+    def generate_compliant_version(self, response: str, violations: List[Violation]) -> str:
+        """
+        OPTIONAL: Generate compliant alternative response.
+        
+        Default implementation uses Gemini 3 Pro.
+        Override for custom remediation logic.
+        """
+        pass
 ```
 
 ---
 
-## 🔒 SECURITY & BEST PRACTICES
+### Violation Class
 
-### Security Checklist
-
-- [ ] **Input Validation:** Sanitize all user inputs
-- [ ] **No Data Leakage:** Never log sensitive data
-- [ ] **Secure Dependencies:** Use vetted libraries only
-- [ ] **API Key Protection:** Never hardcode credentials
-- [ ] **Rate Limiting:** Prevent abuse
-- [ ] **Error Handling:** Don't expose internals in errors
-- [ ] **Audit Logging:** Log all compliance decisions
-
-### Performance Best Practices
+**Location:** `complyguard/core/violation.py`
 
 ```python
-# ✅ GOOD: Compiled regex patterns
+class Violation:
+    """
+    Represents a single compliance violation.
+    """
+    
+    def __init__(self, 
+                 framework: str,           # e.g., "CCPA"
+                 category: str,            # e.g., "Personal Information Disclosure"
+                 severity: str,            # "LOW", "MEDIUM", "HIGH", "CRITICAL"
+                 description: str,         # Human-readable explanation
+                 recommendation: str,      # How to fix
+                 penalty_range: str,       # e.g., "$2,500-$7,500"
+                 regulatory_citation: str, # e.g., "CCPA § 1798.100(a)"
+                 impact_score: int):       # -10 to -50 (subtracted from 100)
+        pass
+```
+
+---
+
+### FrameworkRegistry
+
+**Location:** `complyguard/core/registry.py`
+
+```python
+class FrameworkRegistry:
+    """
+    Global registry for all compliance frameworks.
+    """
+    
+    @staticmethod
+    def register(framework: BaseFramework):
+        """Register a new compliance framework."""
+        pass
+    
+    @staticmethod
+    def get_framework(name: str) -> BaseFramework:
+        """Retrieve framework by name."""
+        pass
+    
+    @staticmethod
+    def list_frameworks() -> List[str]:
+        """List all registered frameworks."""
+        pass
+```
+
+---
+
+## ✅ BEST PRACTICES
+
+### 1. **Accuracy First (95% Rule)**
+
+- Validate all regulatory citations with official sources
+- Test with 50+ real-world examples before deployment
+- Document false positive rate (<5% target)
+
+**Example:**
+```python
+# BAD: Vague penalty description
+penalty_range="Large fines possible"
+
+# GOOD: Specific penalty with source
+penalty_range="$2,500-$7,500 per violation (CCPA § 1798.155)"
+```
+
+---
+
+### 2. **Explicit Over Implicit**
+
+- Clearly state what triggers a violation
+- Avoid ambiguous detection logic
+- Provide concrete examples in docstrings
+
+**Example:**
+```python
+# BAD: Implicit logic
+if "bad_thing" in response:
+    return True
+
+# GOOD: Explicit with explanation
+if self._contains_ssn_pattern(response):
+    # SSN disclosure without consent verification violates CCPA § 1798.100(a)
+    return True
+```
+
+---
+
+### 3. **Context-Aware Detection**
+
+- Use `context` parameter for user-specific checks (age, location, consent status)
+- Don't flag violations if user explicitly consented
+
+**Example:**
+```python
+def analyze(self, prompt, response, context):
+    # Check if user previously consented
+    if context.get('ccpa_consent_given', False):
+        return []  # No violations if consent exists
+    
+    # Otherwise, proceed with checks...
+```
+
+---
+
+### 4. **Severity Calibration**
+
+**Severity Levels:**
+- **LOW:** Minor procedural issue (impact: -10)
+- **MEDIUM:** Regulatory non-compliance but low risk (impact: -20)
+- **HIGH:** Clear violation with penalties (impact: -30 to -35)
+- **CRITICAL:** Severe violation with high penalties or criminal liability (impact: -40 to -50)
+
+---
+
+### 5. **Testing Coverage**
+
+**Minimum Test Cases:**
+- ✅ True positive (violation correctly detected)
+- ✅ True negative (compliant response, no false alarm)
+- ✅ Edge case (ambiguous scenario)
+- ✅ Context-dependent (violation only in certain contexts)
+
+---
+
+## 🔒 SECURITY CONSIDERATIONS
+
+### 1. **Avoid Regex Injection**
+
+```python
+# BAD: User input directly in regex
 import re
+pattern = user_input  # DANGEROUS!
+re.search(pattern, response)
 
-class FastExtension(ComplianceExtension):
-    def __init__(self, config):
-        super().__init__(config)
-        self.credit_card_pattern = re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b")
-    
-    def analyze(self, prompt, response, context):
-        # Fast regex matching
-        if self.credit_card_pattern.search(response):
-            ...
-
-# ❌ BAD: Recompiling regex every call
-class SlowExtension(ComplianceExtension):
-    def analyze(self, prompt, response, context):
-        if re.search(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b", response):
-            ...  # Slow
-```
-
-### Accuracy Guidelines
-
-**95% Accuracy Rule:** All compliance claims must be 95%+ accurate.
-
-- ✅ Reference official regulatory sources
-- ✅ Cite specific law/regulation articles
-- ✅ Validate penalties with recent cases
-- ❌ Don't invent compliance requirements
-- ❌ Don't exaggerate penalties
-
----
-
-## 📚 EXAMPLE IMPLEMENTATIONS
-
-### Full Extension: FERPA (Education)
-
-**File:** `extensions/ferpa_extension.py`
-
-```python
-"""
-FERPA (Family Educational Rights and Privacy Act) Compliance Extension
-Protects student education records in AI applications.
-"""
-
-from complyguard import ComplianceExtension
-import re
-
-class FERPAExtension(ComplianceExtension):
-    
-    STUDENT_PII_PATTERNS = {
-        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
-        "student_id": r"\b(student id|sid)[:\s]*\d{5,10}\b",
-        "grades": r"\b(gpa|grade)[:\s]*[0-4]\.[0-9]{1,2}\b"
-    }
-    
-    def analyze(self, prompt, response, context):
-        violations = []
-        score = 100
-        
-        # Check for SSN exposure
-        if re.search(self.STUDENT_PII_PATTERNS["ssn"], response):
-            violations.append({
-                "framework": "FERPA",
-                "type": "Student SSN Disclosure",
-                "detail": "Social Security Number exposed",
-                "penalty": "Loss of federal funding",
-                "severity": "CRITICAL"
-            })
-            score -= 40
-        
-        # Check for unauthorized grade disclosure
-        if re.search(self.STUDENT_PII_PATTERNS["grades"], response, re.IGNORECASE):
-            if not self._has_consent(context):
-                violations.append({
-                    "framework": "FERPA",
-                    "type": "Unauthorized Grade Disclosure",
-                    "detail": "Student grades disclosed without consent",
-                    "penalty": "FERPA violation + institutional sanctions",
-                    "severity": "SIGNIFICANT"
-                })
-                score -= 30
-        
-        return {
-            "score": max(0, score),
-            "violations": violations,
-            "recommendations": ["Obtain student consent before disclosing records",
-                                "Mask SSNs and student IDs"],
-            "compliant_version": self._redact_pii(response) if violations else None
-        }
-    
-    def _has_consent(self, context):
-        return context.get('student_consent', False)
-    
-    def _redact_pii(self, response):
-        # Redact SSN
-        response = re.sub(self.STUDENT_PII_PATTERNS["ssn"], "XXX-XX-XXXX", response)
-        # Redact grades
-        response = re.sub(self.STUDENT_PII_PATTERNS["grades"], "[GRADE REDACTED]", response, flags=re.IGNORECASE)
-        return response
+# GOOD: Sanitize or use predefined patterns only
+ALLOWED_PATTERNS = ['ssn', 'email', 'phone']
+if pattern_name in ALLOWED_PATTERNS:
+    pattern = PATTERNS[pattern_name]
+    re.search(pattern, response)
 ```
 
 ---
 
-## 🚀 CONTRIBUTION WORKFLOW
+### 2. **Validate External Data**
 
-### Step 1: Fork & Clone
-
-```bash
-git clone https://github.com/YOUR_USERNAME/ComplyGuard-AI.git
-cd ComplyGuard-AI
-git checkout -b feature/new-extension
-```
-
-### Step 2: Create Extension
-
-```bash
-mkdir extensions/your_extension
-touch extensions/your_extension/__init__.py
-touch extensions/your_extension/extension.py
-touch extensions/your_extension/tests.py
-```
-
-### Step 3: Implement & Test
-
-```bash
-# Run tests
-python -m pytest extensions/your_extension/tests.py
-
-# Check code quality
-pylint extensions/your_extension/
-```
-
-### Step 4: Document
-
-Create `extensions/your_extension/README.md`:
-
-```markdown
-# Your Extension Name
-
-**Framework:** PCI-DSS / FERPA / Custom  
-**Industry:** Retail / Education / Finance  
-**Version:** 1.0.0
-
-## Overview
-Brief description of what this extension does.
-
-## Installation
 ```python
-from extensions.your_extension import YourExtension
-```
+# BAD: Trust context without validation
+user_age = context['user_age']  # Could be malicious
 
-## Usage
-```python
-extension = YourExtension({})
-result = extension.analyze(prompt, response, context)
+# GOOD: Validate and sanitize
+user_age = context.get('user_age')
+if user_age and isinstance(user_age, int) and 0 < user_age < 120:
+    # Proceed with validated age
 ```
-
-## Testing
-```bash
-python -m pytest extensions/your_extension/tests.py
-```
-```
-
-### Step 5: Submit PR
-
-```bash
-git add extensions/your_extension/
-git commit -m "feat: Add PCI-DSS compliance extension"
-git push origin feature/new-extension
-```
-
-Create Pull Request with:
-- Extension description
-- Test results
-- Documentation
-- Regulatory source citations
 
 ---
 
-## 📚 RESOURCES & SUPPORT
+### 3. **Rate Limiting for ML Models**
 
-### Official Documentation
-- [Architecture Overview](architecture.md)
-- [Compliance Frameworks](compliance-framework.md)
-- [Contributing Guide](../CONTRIBUTING.md)
-- [API Reference](https://docs.complyguard.ai) (Phase 2)
+If your extension uses external ML models, implement rate limiting:
 
-### Extension Registry
-- [Official Extensions](https://github.com/ArjunFrancis/ComplyGuard-AI/tree/main/extensions)
-- [Community Extensions](https://github.com/topics/complyguard-extension)
+```python
+from functools import lru_cache
+import time
 
-### Support Channels
-- [GitHub Discussions](https://github.com/ArjunFrancis/ComplyGuard-AI/discussions)
-- [GitHub Issues](https://github.com/ArjunFrancis/ComplyGuard-AI/issues)
-- Developer Slack (Phase 2)
+class CustomDetector:
+    def __init__(self):
+        self.last_call = 0
+        self.min_interval = 0.1  # 100ms between calls
+    
+    def detect(self, text):
+        # Rate limiting
+        elapsed = time.time() - self.last_call
+        if elapsed < self.min_interval:
+            time.sleep(self.min_interval - elapsed)
+        
+        result = self._call_ml_model(text)
+        self.last_call = time.time()
+        return result
+```
 
-### Regulatory Resources
-- [GDPR Full Text](https://gdpr-info.eu/)
-- [HIPAA Regulations](https://www.hhs.gov/hipaa/)
-- [EEOC Guidelines](https://www.eeoc.gov/laws/guidance/)
-- [SOX Full Text](https://www.sec.gov/)
-- [PCI-DSS Standards](https://www.pcisecuritystandards.org/)
+---
+
+## 📚 RELATED DOCUMENTS
+
+- [docs/architecture.md](architecture.md) - Core system architecture
+- [docs/compliance-framework.md](compliance-framework.md) - Existing framework details
+- [docs/future-roadmap.md](future-roadmap.md) - Extension ecosystem roadmap
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
+- [README.md](../README.md) - Project overview
+
+---
+
+## 🐛 DEBUGGING TIPS
+
+### Enable Verbose Logging
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+framework = CCPAFramework()
+violations = framework.analyze(prompt, response, context)
+# Logs detailed detection steps
+```
+
+---
+
+### Test Individual Detectors
+
+```python
+# Isolate specific detection method
+framework = CCPAFramework()
+result = framework._detects_personal_info_disclosure("SSN: 123-45-6789")
+assert result == True
+```
+
+---
+
+### Compare with Core Frameworks
+
+```python
+# Benchmark against GDPR (similar to CCPA)
+from complyguard.frameworks import GDPRFramework
+
+gdpr = GDPRFramework()
+ccpa = CCPAFramework()
+
+gdpr_violations = gdpr.analyze(prompt, response, context)
+ccpa_violations = ccpa.analyze(prompt, response, context)
+
+print(f"GDPR: {len(gdpr_violations)}, CCPA: {len(ccpa_violations)}")
+```
+
+---
+
+## ❓ FAQ
+
+**Q: Can extensions modify core frameworks?**  
+A: No. Extensions can only add new frameworks, not modify existing ones (GDPR, HIPAA, EEOC, SOX).
+
+**Q: What's the performance impact of adding extensions?**  
+A: Each extension adds ~50-100ms latency. Optimize regex and avoid external API calls in hot paths.
+
+**Q: Can I sell my extension?**  
+A: Yes, under MIT license terms. Attribution required.
+
+**Q: How do I report bugs in core frameworks?**  
+A: File GitHub issue with "[Core Framework]" tag.
 
 ---
 
 **Extension development guide maintained by:** Repository Manager  
-**Next review:** Q1 2026  
-**For extension support:** Open GitHub issue with `extension` label  
+**Next review:** Q2 2026  
 **Last Updated:** December 23, 2025
